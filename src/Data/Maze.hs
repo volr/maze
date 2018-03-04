@@ -1,13 +1,18 @@
-module Data.Maze (generateMaze) where
-
-import Data.Graph.Inductive.Graph
-import Data.Graph.Inductive.PatriciaTree
-
-type Features = [Integer]
+-- \ A T-Maze generator and executor for use in online learning systems
+module Data.Maze (generateMaze, Direction, MazeNode(Exit, Entry)) where
 
 data Direction = Left | Right | Back deriving Show
-data MazeNode = Fork Features Features | Blind | Exit
 
-generateMaze :: Integer -> Gr Char ()
-generateMaze 0 = mkGraph [] []
-generateMaze n = mkGraph (zip [1..2] "ab") []
+data MazeNode a = Blind | Entry | Exit
+                | Fork { left :: a, right :: a, parent :: MazeNode a }
+                deriving (Eq)
+
+instance (Show a) => Show (MazeNode a) where
+  show Blind = "Blind"
+  show Entry = "Entry"
+  show Exit = "Exit"
+  show (Fork left right _) = "Fork " ++ (show left) ++ " " ++ (show right)
+
+generateMaze :: Integer -> MazeNode Integer
+generateMaze 0 = Exit
+generateMaze n = Exit
