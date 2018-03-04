@@ -1,5 +1,8 @@
 -- \ A T-Maze generator and executor for use in online learning systems
-module Data.Maze (generateMaze, Direction(Left, Right, Back), MazeNode(Exit, Entry)) where
+module Data.Maze (generateMaze,
+  Direction(Left, Right, Back),
+  MazeNode(Exit, Entry)
+) where
 
 import System.Random
 
@@ -9,9 +12,9 @@ data MazeNode a = Blind | Entry | Exit
                 | Fork { left :: MazeNode a, right :: MazeNode a }
                 deriving (Eq, Show)
 
-generateMaze :: Integer -> MazeNode Integer
-generateMaze 0 = Exit
-generateMaze n = generateBlindMaze n
+generateMaze :: (RandomGen g) => g -> Integer -> MazeNode Integer
+generateMaze g 0 = Exit
+generateMaze g n = generateBlindMaze n
 
 generateBlindMaze :: Integer -> MazeNode Integer
 generateBlindMaze 0 = Blind

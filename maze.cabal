@@ -34,6 +34,7 @@ test-suite maze-test
   main-is:             Spec.hs
   build-depends:       base
                      , maze
+                     , random
                      , hspec
                      , QuickCheck
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
