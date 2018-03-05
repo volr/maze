@@ -5,8 +5,12 @@ module Data.Maze (
   Features,
   Maze(Blind, Exit, Entry, Fork),
   MazePath(MazePath),
-  FeatureStrategy(Exclusive)
+  FeatureStrategy(FeatureStrategy),
+  FeatureGenerationStrategy(Consistent)
 ) where
+
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 import System.Random
 
@@ -33,12 +37,19 @@ data MazePath = MazePath {
 , features :: Features
 } deriving (Eq, Show)
 
+-- | A strategy for generating features
+data FeatureStrategy = FeatureStrategy {
+  blind :: FeatureGenerationStrategy
+, exit :: FeatureGenerationStrategy
+}
+
 -- | Strategies for rendering features in situations where the actor
 --   will have to make a choice
-newtype FeatureStrategy =
-  -- | Exclusively use the feature with the given index to lead
-  --   towards the exit of the maze
-  Exclusive Int
+newtype FeatureGenerationStrategy
+  -- | Consistently turns on the feature with the given indices
+  = Consistent (Set Int)
+  -- | Randomly turns on features with a certain probability 0 < t < 1
+  -- Random Float
 
 -- | Tests whether a node is contained in a given 'Maze'
 contains
@@ -57,24 +68,28 @@ generateMaze :: (RandomGen generator) => generator -> FeatureStrategy -> Int -> 
 generateMaze _ _ _ 0 = Exit
 generateMaze generator strategy features depth =
   let (isLeftExit, generatorBranch) = random generator
-      branchBlind = generateBlindMaze strategy features (depth - 1)
+      branchBlind = generateBlindMaze (blind strategy) features (depth - 1)
       branchExit =
         MazePath (generateMaze generatorBranch strategy features (depth - 1))
-                 (replicate features False)
+                 (generateFeatures (exit strategy) features)
   in if isLeftExit
     then Fork branchExit branchBlind
     else Fork branchBlind branchExit
 
-generateBlindMaze :: FeatureStrategy -> Int -> Int -> MazePath
-generateBlindMaze strategy features 0 = MazePath Blind $ generateBlindFeatures strategy features
+generateBlindMaze :: FeatureGenerationStrategy -> Int -> Int -> MazePath
+generateBlindMaze strategy features 0 = MazePath Blind $ generateFeatures strategy features
 generateBlindMaze strategy features depth =
   MazePath (Fork (generateBlindMaze strategy features (depth - 1))
                  (generateBlindMaze strategy features (depth - 1)))
-           (generateBlindFeatures strategy features)
+           (generateFeatures strategy features)
 
-generateBlindFeatures :: FeatureStrategy -> Int -> Features
-generateBlindFeatures (Exclusive n) features =
-  let (head,tail) = splitAt n $ replicate (features - 1) False
-  in head ++ [True] ++ tail
+generateFeatures :: FeatureGenerationStrategy -> Int -> Features
+generateFeatures strategy features =
+  generateFeaturesRecursive features strategy features
 
---generateExitFeatures :: FeatureStrategy -> Integer -> Features
+-- | Generates features considering the generation strategy one index at a time
+generateFeaturesRecursive :: Int -> FeatureGenerationStrategy -> Int -> Features
+generateFeaturesRecursive 0 _ _ = []
+generateFeaturesRecursive iterations (Consistent set) features =
+  Set.member (features - iterations) set :
+    generateFeaturesRecursive (iterations - 1) (Consistent set) features
