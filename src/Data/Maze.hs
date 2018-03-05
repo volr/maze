@@ -2,18 +2,18 @@
 module Data.Maze (
   contains, generateMaze,
   Direction(Left, Right, Back),
-  MazeNode(Blind, Exit, Entry, Fork)
+  Features,
+  MazeNode(Blind, Exit, Entry, Fork),
+  FeatureStrategy(Exclusive)
 ) where
 
-
-import Data.List
 import System.Random
 
 -- | The only three directions an actor can move
 data Direction = Left | Right | Back deriving Show
 
--- | Features in the maze which will appear at each fork (choice)
---type Features a = List a
+-- | Features in the maze which will appear at each 'Fork' (choices)
+type Features = [Bool]
 
 -- | The four possible types of nodes featured in a T-maze
 data MazeNode a = Blind -- ^ A blind path
@@ -23,21 +23,25 @@ data MazeNode a = Blind -- ^ A blind path
                 | Fork { left :: MazeNode a, right :: MazeNode a }
                 deriving (Eq, Show)
 
--- | Strategies for
-newtype FeatureStrategy = Consistent Integer
+-- | Strategies for rendering features in situations where the actor
+--   will have to make a choice
+newtype FeatureStrategy =
+  -- | Exclusively use the feature with the given index to lead
+  --   towards the exit of the maze
+  Exclusive Integer
 
--- | Tests whether a maze contains a given node
+-- | Tests whether a maze contains a given 'MazeNode'
 contains :: MazeNode a -> MazeNode a -> Bool
 contains (Fork mazeLeft mazeRight) node =
   contains mazeLeft node || contains mazeRight node
 contains a b = a == b
 
-generateMaze :: (RandomGen g) => g -> Integer -> MazeNode Integer
-generateMaze _ 0 = Exit
-generateMaze g n =
-  let (isLeftExit, genBranch) = random g
-      branchBlind = generateBlindMaze (n - 1)
-      branchExit = generateMaze genBranch (n - 1)
+generateMaze :: (RandomGen generator) => generator -> FeatureStrategy -> Integer -> Integer -> MazeNode Integer
+generateMaze _ _ _ 0 = Exit
+generateMaze generator strategy features depth =
+  let (isLeftExit, generatorBranch) = random generator
+      branchBlind = generateBlindMaze (depth - 1)
+      branchExit = generateMaze generatorBranch strategy features (depth - 1)
   in if isLeftExit
     then Fork branchExit branchBlind
     else Fork branchBlind branchExit

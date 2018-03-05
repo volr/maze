@@ -24,10 +24,10 @@ spec = do
       contains (Fork Exit Blind) Blind `shouldBe` True
       contains (Fork Exit Exit) Blind `shouldBe` False
 
-    it "can generate an empty maze" $ 
-      generateMaze gen 0 `shouldBe` Exit
+    it "can generate an empty maze" $
+      generateMaze gen (Exclusive 0) 0 0 `shouldBe` Exit
 
     it "can generate a maze with one level" $ do
-      let maze = generateMaze gen 1
+      let maze = generateMaze gen (Exclusive 0) 0 1
       contains maze Blind `shouldBe` True
       contains maze Exit `shouldBe` True
