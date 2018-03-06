@@ -3,13 +3,15 @@
 -- \ A T-Maze generator and evaluator for use in machine learning systems
 module Data.Maze (
   contains, find, generateMaze, toStrategy,
-  Direction(Left, Right, Back),
+  Direction(Left, Right),
   Features,
   Maze(Blind, Exit, Entry, Fork),
   MazePath(MazePath),
   FeatureStrategy(FeatureStrategy),
   FeatureGenerationStrategy(Consistent)
 ) where
+
+import Prelude hiding (Either(Left, Right))
 
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -21,8 +23,8 @@ import Data.Aeson.TH
 
 import System.Random
 
--- | The only three directions an actor can move
-data Direction = Left | Right | Back deriving Show
+-- | The only two directions an actor can move
+data Direction = Left | Right deriving Show
 
 -- | Features in the maze which will appear at each 'Fork' (choices)
 type Features = [Bool]
@@ -118,3 +120,8 @@ generateFeaturesRecursive iterations (Consistent set) features =
 -- | Creates a 'FeatureStrategy' given a constructor and to lists of indices
 toStrategy :: (Set Int -> FeatureGenerationStrategy) -> [Int] -> [Int] -> FeatureStrategy
 toStrategy f blind exit = FeatureStrategy (f (Set.fromList blind)) (f (Set.fromList exit))
+
+walk :: [Direction] -> Maze -> Maze
+walk (Left:directions) (Fork left right) = walk directions (node left)
+walk (Right:directions) (Fork left right) = walk directions (node right)
+walk _ maze = maze
