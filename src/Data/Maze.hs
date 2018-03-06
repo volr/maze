@@ -1,6 +1,8 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 -- \ A T-Maze generator and evaluator for use in machine learning systems
 module Data.Maze (
-  contains, find, generateMaze,
+  contains, find, generateMaze, toStrategy,
   Direction(Left, Right, Back),
   Features,
   Maze(Blind, Exit, Entry, Fork),
@@ -11,6 +13,11 @@ module Data.Maze (
 
 import Data.Set (Set)
 import qualified Data.Set as Set
+
+import GHC.Generics
+
+import Data.Aeson
+import Data.Aeson.TH
 
 import System.Random
 
@@ -28,14 +35,20 @@ data Maze = Blind -- ^ A blind path
           | Fork { left :: MazePath
                  , right :: MazePath
                  }
-          deriving (Eq, Show)
+          deriving (Eq, Generic, Show)
+
+instance FromJSON Maze
+instance ToJSON Maze
 
 -- | A node of the maze containing a path to a new node and the features
 --   associated with the path
 data MazePath = MazePath {
   node :: Maze
 , features :: Features
-} deriving (Eq, Show)
+} deriving (Eq, Generic, Show)
+
+instance FromJSON MazePath
+instance ToJSON MazePath
 
 -- | A strategy for generating features
 data FeatureStrategy = FeatureStrategy {
@@ -64,7 +77,15 @@ find f maze@(Fork mazeLeft mazeRight) =
   f maze || find f (node mazeLeft) || find f (node mazeRight)
 find f maze = f maze
 
-generateMaze :: (RandomGen generator) => generator -> FeatureStrategy -> Int -> Int -> Maze
+-- | Generates a 'Maze' at a certain depth with the given 'FeatureStrategy' for
+--   displaying features for each 'Fork' in the maze
+generateMaze
+  :: (RandomGen generator) =>
+  generator ->       -- ^ The random generator to use when branching and displaying features
+  FeatureStrategy -> -- ^ Instructions on how to display features for each junction ('Fork')
+  Int ->             -- ^ The number of features in the maze (length of feature vector)
+  Int ->             -- ^ The depth of the maze (number of junctions)
+  Maze               -- ^ A 'Maze' that contains at least one 'Exit'
 generateMaze _ _ _ 0 = Exit
 generateMaze generator strategy features depth =
   let (isLeftExit, generatorBranch) = random generator
@@ -93,3 +114,7 @@ generateFeaturesRecursive 0 _ _ = []
 generateFeaturesRecursive iterations (Consistent set) features =
   Set.member (features - iterations) set :
     generateFeaturesRecursive (iterations - 1) (Consistent set) features
+
+-- | Creates a 'FeatureStrategy' given a constructor and to lists of indices
+toStrategy :: (Set Int -> FeatureGenerationStrategy) -> [Int] -> [Int] -> FeatureStrategy
+toStrategy f blind exit = FeatureStrategy (f (Set.fromList blind)) (f (Set.fromList exit))
