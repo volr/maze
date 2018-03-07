@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
--- \ A T-Maze generator and evaluator for use in machine learning systems
+-- | A T-Maze generator and evaluator for use in machine learning systems
 module Data.Maze (
   contains, find, generateMaze, toStrategy, walk,
   Direction(Left, Right),
@@ -123,6 +123,8 @@ generateFeaturesRecursive iterations (Consistent set) features =
 toStrategy :: (Set Int -> FeatureGenerationStrategy) -> [Int] -> [Int] -> FeatureStrategy
 toStrategy f blind exit = FeatureStrategy (f (Set.fromList blind)) (f (Set.fromList exit))
 
+-- | "Walks" the maze in the given sequence until the maze stops or no further
+--   instructions are given
 walk :: [Direction] -> Maze -> Maze
 walk (Left:directions) (Fork left right) = walk directions (node left)
 walk (Right:directions) (Fork left right) = walk directions (node right)

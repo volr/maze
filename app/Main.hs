@@ -2,7 +2,7 @@ module Main where
 
 import System.Environment
 import System.IO
-import System.Random (mkStdGen)
+import System.Random (mkStdGen, randomRIO)
 
 import Data.Aeson (decode, encode)
 
@@ -20,7 +20,8 @@ main = do
       , [(blindFeatures, _)] <- reads blindString
       , [(exitFeatures, _)] <- reads exitString
       , [(features, _)] <- reads featureString -> do
-      let generator = mkStdGen 538213
+      seed <- randomRIO (0, 1000000)
+      let generator = mkStdGen seed
       let strategy = toStrategy Consistent blindFeatures exitFeatures
       let maze = generateMaze generator strategy features depth
       ByteString.putStr $ encode maze
