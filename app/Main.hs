@@ -15,19 +15,24 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["generate", first, second]
-      | [(depth, _)] <- reads first
-      , [(features, _)] <- reads second -> do
+    ["generate", depthString, blindString, exitString, featureString]
+      | [(depth, _)] <- reads depthString
+      , [(blindFeatures, _)] <- reads blindString
+      , [(exitFeatures, _)] <- reads exitString
+      , [(features, _)] <- reads featureString -> do
       let generator = mkStdGen 538213
-      let strategy = toStrategy Consistent [0] [1]
+      let strategy = toStrategy Consistent blindFeatures exitFeatures
       let maze = generateMaze generator strategy features depth
       ByteString.putStr $ encode maze
-    ["walk", choices, mazeString]
-      | Just maze <- (decode (ByteString.Char8.pack mazeString) :: Maybe Maze) ->
-      putStrLn $ show maze
+    ["walk", choiceString, mazeString]
+      | Just choices <- (decode (ByteString.Char8.pack choiceString) :: Maybe [Direction])
+      , Just maze <- (decode (ByteString.Char8.pack mazeString) :: Maybe Maze) ->
+      case (walk choices maze) of
+        Fork left right -> ByteString.putStr $ encode $ (features left, features right)
+        node -> ByteString.putStr $ encode node
     _ -> do
       name <- getProgName
       hPutStrLn stderr $ unlines
-        [ "Usage: " ++ name ++ " generate <depth> <number of features>"
+        [ "Usage: " ++ name ++ " generate <depth> <blind features> <exit features> <number of features>"
         , "       " ++ name ++ " walk <list of choices> <maze>"
         ]

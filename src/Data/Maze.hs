@@ -2,11 +2,11 @@
 
 -- \ A T-Maze generator and evaluator for use in machine learning systems
 module Data.Maze (
-  contains, find, generateMaze, toStrategy,
+  contains, find, generateMaze, toStrategy, walk,
   Direction(Left, Right),
   Features,
   Maze(Blind, Exit, Entry, Fork),
-  MazePath(MazePath),
+  MazePath(MazePath, node, features),
   FeatureStrategy(FeatureStrategy),
   FeatureGenerationStrategy(Consistent)
 ) where
@@ -24,7 +24,9 @@ import Data.Aeson.TH
 import System.Random
 
 -- | The only two directions an actor can move
-data Direction = Left | Right deriving Show
+data Direction = Left | Right deriving (Generic, Show)
+instance FromJSON Direction
+instance ToJSON Direction
 
 -- | Features in the maze which will appear at each 'Fork' (choices)
 type Features = [Bool]
