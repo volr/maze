@@ -35,4 +35,10 @@ main = do
       hPutStrLn stderr $ unlines
         [ "Usage: " ++ name ++ " generate <depth> <blind features> <exit features> <number of features>"
         , "       " ++ name ++ " walk <list of choices> <maze>"
+        , "Examples: "
+        , "   - " ++ name ++ " generate 2 [1] [0] 3"
+        , "     Generates a maze of depth two where the feature in index 0 leads to the exit"
+        , "   - " ++ name ++ " walk '[\"Right\"]' `walk generate 2 [1] [0] 3`"
+        , "     Walks right in the maze above of depth 2"
+        , "Author: Jens Egholm <jensegholm@protonmail.com>"
         ]
